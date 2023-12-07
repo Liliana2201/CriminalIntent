@@ -1,11 +1,13 @@
 package com.bignerdranch.android.criminalintent
 
 import android.content.Context
+import androidx.lifecycle.LiveData
 import androidx.room.Room
 import database.CrimeDatabase
 import java.util.UUID
+import java.util.concurrent.Executors
 
-private const val DATABASE_NAME = "crimedatabase"
+private const val DATABASE_NAME = "crime-database"
 class CrimeRepository private
 constructor(context: Context) {
     private val database : CrimeDatabase =
@@ -15,8 +17,14 @@ constructor(context: Context) {
             DATABASE_NAME
         ).build()
     private val crimeDao = database.crimeDao()
-    fun getCrimes(): List<Crime> = crimeDao.getCrimes()
-    fun getCrime(id: UUID): Crime? = crimeDao.getCrime(id)
+    private val executor = Executors.newSingleThreadExecutor() //remove before pushing
+    fun getCrimes(): LiveData<List<Crime>> = crimeDao.getCrimes()
+    fun getCrime(id: UUID): LiveData<Crime?> = crimeDao.getCrime(id)
+    fun addCrime(crime: Crime) {
+        executor.execute {
+            crimeDao.addCrime(crime)
+        }
+    } //remove this eventually
     companion object {
         private var INSTANCE: CrimeRepository? = null
         fun initialize(context: Context) {
